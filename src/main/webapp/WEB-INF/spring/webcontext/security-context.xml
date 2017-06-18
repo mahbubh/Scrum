@@ -1,0 +1,65 @@
+<beans:beans xmlns="http://www.springframework.org/schema/security"
+             xmlns:beans="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="http://www.springframework.org/schema/beans
+	http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+	http://www.springframework.org/schema/security
+	http://www.springframework.org/schema/security/spring-security-3.2.xsd">
+    
+    <http  access-denied-page="/accessdenied" >
+        
+        <intercept-url pattern="/accessdenied" access="IS_AUTHENTICATED_ANONYMOUSLY" /> 
+
+        <intercept-url pattern="/" access="ROLE_ADMIN, ROLE_PRODUCT_OWNER, ROLE_SCRUM_MASTER, ROLE_DEVELOPER, ROLE_TESTER" />
+        <form-login login-page="/login" 
+                    default-target-url="/" 
+                    authentication-failure-url="/loginfailed"
+                    username-parameter="username"
+                    password-parameter="password" 
+                    login-processing-url="/auth/login_check" 
+        />
+        
+        <intercept-url pattern="/employee/*" access="ROLE_ADMIN" /> 
+        <intercept-url pattern="/leave/*" access="ROLE_ADMIN" /> 
+        <intercept-url pattern="/insurance/*" access="ROLE_ADMIN" /> 
+        
+        <intercept-url pattern="/tester/*" access="ROLE_TESTER" /> 
+        <intercept-url pattern="/developer/*" access="ROLE_DEVELOPER" /> 
+
+        <intercept-url pattern="/product-backlog/*" access="ROLE_PRODUCT_OWNER" /> 
+        <intercept-url pattern="/release-backlog/*" access="ROLE_PRODUCT_OWNER, ROLE_SCRUM_MASTER" /> 
+        <intercept-url pattern="/sprint/*" access="ROLE_PRODUCT_OWNER, ROLE_SCRUM_MASTER" /> 
+        <intercept-url pattern="/user-story/*" access="ROLE_PRODUCT_OWNER, ROLE_SCRUM_MASTER, ROLE_DEVELOPER, ROLE_TESTER" /> 
+        <intercept-url pattern="/burndown-chart" access="ROLE_ADMIN, ROLE_PRODUCT_OWNER, ROLE_SCRUM_MASTER, ROLE_DEVELOPER, ROLE_TESTER" />
+
+        <logout logout-success-url="/logout" />
+ 
+    </http>
+    
+    
+    
+    <beans:bean id="dataSourceSecurity" class="org.apache.commons.dbcp.BasicDataSource"
+                destroy-method="close">
+        <beans:property name="driverClassName" value="com.mysql.jdbc.Driver" />
+        <beans:property name="url" value="jdbc:mysql://localhost:3306/mumscrum?zeroDateTimeBehavior=convertToNull" />
+        <beans:property name="username" value="root" />
+        <beans:property name="password" value="" />
+    </beans:bean>
+    <beans:bean id="webexpressionHandler" class="org.springframework.security.web.access.expression.DefaultWebSecurityExpressionHandler" /> 
+
+    <beans:bean id="encoder" class="org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder">
+        <!--<beans:constructor-arg name="strength" value="10" />-->
+    </beans:bean>
+        
+    
+    
+    <authentication-manager>
+        <authentication-provider>
+            <password-encoder ref="encoder" />
+            <jdbc-user-service data-source-ref="dataSourceSecurity"
+                               users-by-username-query="select username, password, enabled FROM employee WHERE username=?"
+                               authorities-by-username-query="SELECT u.username, r.roleName FROM employee u, role r, employee_role  ur  WHERE u.id=ur.Employee_id AND r.roleId=ur.roles_roleId AND u.username =?" />
+        </authentication-provider>
+    </authentication-manager>
+
+ 
+</beans:beans>
